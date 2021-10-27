@@ -1,75 +1,57 @@
 package com.beans;
 
+import com.enums.Currency;
+import com.enums.Metal;
 import com.models.Ratios;
 import com.utils.jsonToRatiosMapper;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.Startup;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Date;
-import java.util.Properties;
+import java.util.HashMap;
 
 
 @Component
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
 @Startup
 public class HistoricalDataBean {
-    private static final String GOLD = "XAG";
-    private static final String SILVER = "XAU";
-    private static final String EURO = "EUR";
-    private static final String US_DOLLAR = "USD";
-    private static final String POLISH_ZLOTY = "PLN";
 
-    private Ratios currentGoldPLNRatios = null;
-    private Ratios currentGoldUSDRatios = null;
-    private Ratios currentGoldEURRatios = null;
-    private Ratios currentSilverPLNRatios = null;
-    private Ratios currentSilverEURRatios = null;
-    private Ratios currentSilverUSDRatios = null;
+    HashMap<Pair<Metal, Currency>, Ratios> allRatios = new HashMap<>();
 
-    public Ratios getGoldRatios(Properties whichRatios) {
-        switch (whichRatios.get("Currency").toString()) {
-            case "PLN":
-                return this.currentGoldPLNRatios;
-            case "USD":
-                return this.currentGoldUSDRatios;
-            case "EUR":
-                return this.currentGoldEURRatios;
-        }
-        return null;
+
+    public Ratios getRatios(Metal metal, Currency currency) throws JSONException, IOException {
+        refreshRatiosIfOutdated(metal, currency);
+        return this.allRatios.get(Pair.of(metal, currency));
     }
 
 
-    public Ratios getSilverRatios(Properties whichRatios) {
-        switch (whichRatios.get("Currency").toString()) {
-            case "PLN":
-                return this.currentGoldPLNRatios;
-            case "USD":
-                return this.currentGoldUSDRatios;
-            case "EUR":
-                return this.currentGoldEURRatios;
+    private void refreshRatiosIfOutdated(Metal metal, Currency currency) throws IOException, JSONException {
+        if (this.allRatios.get(Pair.of(metal, currency)) != null &&
+                isRatiosActual(this.allRatios.get(Pair.of(metal, currency)))) {
+            this.init();
         }
-        return null;
     }
 
     @PostConstruct
     public void init() throws IOException, JSONException {
-        this.currentGoldPLNRatios = getRatiosFromAPI(GOLD, POLISH_ZLOTY);
-        this.currentGoldUSDRatios = getRatiosFromAPI(GOLD, US_DOLLAR);
-        this.currentGoldEURRatios = getRatiosFromAPI(GOLD, EURO);
-        this.currentSilverPLNRatios = getRatiosFromAPI(SILVER, POLISH_ZLOTY);
-        this.currentSilverEURRatios = getRatiosFromAPI(SILVER, US_DOLLAR);
-        this.currentSilverUSDRatios = getRatiosFromAPI(SILVER, EURO);
+        Pair<Metal, Currency> pair = Pair.of(Metal.GOLD, Currency.PLN);
+        this.allRatios.put(Pair.of(Metal.GOLD, Currency.PLN), getRatiosFromAPI(Metal.GOLD.getSymbol(), Currency.PLN.getSymbol()));
+        this.allRatios.put(Pair.of(Metal.GOLD, Currency.USD), getRatiosFromAPI(Metal.GOLD.getSymbol(), Currency.USD.getSymbol()));
+        this.allRatios.put(Pair.of(Metal.GOLD, Currency.EUR), getRatiosFromAPI(Metal.GOLD.getSymbol(), Currency.EUR.getSymbol()));
+        this.allRatios.put(Pair.of(Metal.SILVER, Currency.PLN), getRatiosFromAPI(Metal.GOLD.getSymbol(), Currency.PLN.getSymbol()));
+        this.allRatios.put(Pair.of(Metal.SILVER, Currency.USD), getRatiosFromAPI(Metal.GOLD.getSymbol(), Currency.USD.getSymbol()));
+        this.allRatios.put(Pair.of(Metal.SILVER, Currency.EUR), getRatiosFromAPI(Metal.GOLD.getSymbol(), Currency.EUR.getSymbol()));
     }
 
     private Ratios getRatiosFromAPI(String metal, String currency) throws IOException, JSONException {
@@ -95,30 +77,6 @@ public class HistoricalDataBean {
                         ratios.getEmbedded().getHistorical_spot_prices().size() - 1)
                 .getDate();
         return !lastRatiosDate.before(today);
-    }
-
-    public Ratios getCurrentGoldPLNRatios() {
-        return currentGoldPLNRatios;
-    }
-
-    public Ratios getCurrentGoldUSDRatios() {
-        return currentGoldUSDRatios;
-    }
-
-    public Ratios getCurrentGoldEURRatios() {
-        return currentGoldEURRatios;
-    }
-
-    public Ratios getCurrentSilverPLNRatios() {
-        return currentSilverPLNRatios;
-    }
-
-    public Ratios getCurrentSilverEURRatios() {
-        return currentSilverEURRatios;
-    }
-
-    public Ratios getCurrentSilverUSDRatios() {
-        return currentSilverUSDRatios;
     }
 
 }
