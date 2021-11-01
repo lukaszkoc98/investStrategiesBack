@@ -1,20 +1,12 @@
 package com.controllers;
 
-import com.fasterxml.jackson.databind.util.JSONPObject;
-import com.models.Ratio;
-import com.models.Ratios;
+import com.models.AuthorizedUser;
+import com.models.ChangePasswordDTO;
 import com.models.User;
-import com.repositories.AuthorizedUser;
 import com.repositories.UsersRepository;
-import com.utils.jsonToRatiosMapper;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import org.apache.tomcat.util.http.fileupload.IOUtils;
-import org.apache.tomcat.util.json.JSONParser;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,19 +15,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @RestController
@@ -46,8 +30,8 @@ public class UsersController {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
+    PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @GetMapping
     @RequestMapping("/all")
@@ -56,107 +40,51 @@ public class UsersController {
         return List.of(usersRepository.findAll());
     }
 
-    class Test {
-        public Test() {
-        }
-
-        private String metal;
-
-        public Test(String metal, String currency, String weight_unit) {
-            this.metal = metal;
-            this.currency = currency;
-            this.weight_unit = weight_unit;
-        }
-
-        private String currency;
-        private String weight_unit;
-
-        public String getMetal() {
-            return metal;
-        }
-
-        public void setMetal(String metal) {
-            this.metal = metal;
-        }
-
-        public String getCurrency() {
-            return currency;
-        }
-
-        public void setCurrency(String currency) {
-            this.currency = currency;
-        }
-
-        public String getWeight_unit() {
-            return weight_unit;
-        }
-
-        public void setWeight_unit(String weight_unit) {
-            this.weight_unit = weight_unit;
-        }
-    }
-    @GetMapping
-    @RequestMapping("/gold")
-    public ResponseEntity<Ratios> getGold() throws IOException, JSONException {
-//        URL url = new URL("https://goldbroker.com/api/historical-spot-prices?metal=XAG&currency=PLN&weight_unit=oz");
-//        HttpURLConnection con = (HttpURLConnection) url.openConnection();
-//        con.setRequestMethod("GET");
-//        con.setRequestProperty("Content-Type", "application/json");
-//        BufferedReader in = new BufferedReader(
-//                new InputStreamReader(con.getInputStream()));
-//        String inputLine;
-//        StringBuffer content = new StringBuffer();
-//        while ((inputLine = in.readLine()) != null) {
-//            content.append(inputLine);
-//        }
-//        in.close();
-        Path path = Paths.get("src/test/resources/string.txt");
-
-        BufferedReader reader = Files.newBufferedReader(path);
-        String content = reader.readLine();
-        JSONObject jsonObject = new JSONObject(String.valueOf(content));
-        Ratios ratios = jsonToRatiosMapper.map(jsonObject);
-        return ResponseEntity.status(HttpStatus.OK).body(ratios);
-    }
-
-    @GetMapping
-    @RequestMapping("/ratios")
-    public ResponseEntity<ArrayList<Ratio>> getRatios() throws IOException, JSONException {
-//        URL url = new URL("https://goldbroker.com/api/historical-spot-prices?metal=XAG&currency=PLN&weight_unit=oz");
-//        HttpURLConnection con = (HttpURLConnection) url.openConnection();
-//        con.setRequestMethod("GET");
-//        con.setRequestProperty("Content-Type", "application/json");
-//        BufferedReader in = new BufferedReader(
-//                new InputStreamReader(con.getInputStream()));
-//        String inputLine;
-//        StringBuffer content = new StringBuffer();
-//        while ((inputLine = in.readLine()) != null) {
-//            content.append(inputLine);
-//        }
-//        in.close();
-        Path path = Paths.get("src/test/resources/string.txt");
-
-        BufferedReader reader = Files.newBufferedReader(path);
-        String content = reader.readLine();
-        JSONObject jsonObject = new JSONObject(String.valueOf(content));
-        JSONObject jsonEmbedded = jsonObject.getJSONObject("_embedded");
-        return ResponseEntity.status(HttpStatus.OK).body(jsonToRatiosMapper.extractRatios(jsonEmbedded));
-    }
-
     @PostMapping()
-    @RequestMapping(value = "/add", method = RequestMethod.POST, headers="Accept=application/json")
+    @RequestMapping(value = "/add", method = RequestMethod.POST, headers = "Accept=application/json")
     ResponseEntity<String> newUser(@RequestBody User newUser) {
-        if(isUsernameTaken(getUsernames(),newUser.getUsername())){
+        if (isUsernameTaken(getUsernames(), newUser.getUsername())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Username already taken");
-        }
-        else {
+        } else {
             newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
             return ResponseEntity.status(HttpStatus.OK).body(usersRepository.save(newUser).toString());
         }
     }
 
     @PostMapping()
-    @RequestMapping(value = "/authorize", method = RequestMethod.POST, headers="Accept=application/json")
+    @RequestMapping(value = "/changepassword", method = RequestMethod.POST, headers = "Accept=application/json")
+    ResponseEntity<String> changePassword(@RequestBody ChangePasswordDTO changePasswordDTO) {
+        if (null != changePasswordDTO.newPassword &&
+                changePasswordDTO.newPassword.equals(changePasswordDTO.newPasswordRepeated)) {
+            if (checkPasswordPolicies(changePasswordDTO.newPassword)) {
+                User existingUser = getUserByUsername(changePasswordDTO.username);
+                return changePasswordIfCurrentPasswordCorrect(changePasswordDTO, existingUser);
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Password do not meets password policies");
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Passwords are not equal");
+    }
+
+    private ResponseEntity<String> changePasswordIfCurrentPasswordCorrect(ChangePasswordDTO changePasswordDTO, User existingUser) {
+        if (isPasswordCorrect(existingUser.getUsername(), changePasswordDTO.currentPassword)) {
+            usersRepository.updatePassword(
+                    passwordEncoder.encode(changePasswordDTO.newPassword),
+                    existingUser.getId());
+            return ResponseEntity.status(HttpStatus.OK).body("Password change success");
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Current password is not correct");
+    }
+
+
+    private boolean checkPasswordPolicies(String newPassword) {
+        Pattern passwordPoliciesPattern = Pattern.compile("^(?=.*[0-9])(?=.*[a-zA-z])(?=\\S+$).{4,}$");
+        Matcher passwordPoliciesMatcher = passwordPoliciesPattern.matcher(newPassword);
+        return passwordPoliciesMatcher.matches();
+    }
+
+
+    @PostMapping()
+    @RequestMapping(value = "/authorize", method = RequestMethod.POST, headers = "Accept=application/json")
     ResponseEntity<AuthorizedUser> authorizeUser(@RequestBody User userToAuthorize) {
         Long now = System.currentTimeMillis();
         String jwts = Jwts.builder()
@@ -168,19 +96,22 @@ public class UsersController {
         Claims claims = Jwts.parser().setSigningKey("secretkey").parseClaimsJws(jwts).getBody();
         try {
             User existingUser = getUserByUsername(userToAuthorize.getUsername());
-            if(passwordEncoder.matches(userToAuthorize.getPassword(), existingUser.getPassword())){
+            if (isPasswordCorrect(existingUser.getUsername(), userToAuthorize.getPassword())) {
                 AuthorizedUser authorizedUser = new AuthorizedUser(existingUser.getId(), existingUser.getUsername()
-                ,userToAuthorize.getPassword(), existingUser.getEmail(), jwts);
+                        , userToAuthorize.getPassword(), existingUser.getEmail(), jwts);
                 return ResponseEntity.status(HttpStatus.OK).body(authorizedUser);
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
             }
-            else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new AuthorizedUser());
-            }
-        } catch(NoSuchElementException e){
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new AuthorizedUser());
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }
 
+    private boolean isPasswordCorrect(String username, String password) {
+        User existingUser = getUserByUsername(username);
+        return passwordEncoder.matches(password, existingUser.getPassword());
+    }
 
     private User getUserByUsername(String username) throws NoSuchElementException {
         return usersRepository.findAll().stream()
@@ -189,13 +120,13 @@ public class UsersController {
     }
 
     private List<String> getUsernames() {
-        return usersRepository.findAll().stream().map(user->user.getUsername())
+        return usersRepository.findAll().stream().map(user -> user.getUsername())
                 .collect(Collectors.toList());
     }
 
-    private boolean isUsernameTaken(List <String> usernames, String username){
+    private boolean isUsernameTaken(List<String> usernames, String username) {
         return usernames.stream()
-                .filter(takenUsername->takenUsername.equals(username))
+                .filter(takenUsername -> takenUsername.equals(username))
                 .findFirst().isPresent();
     }
 
