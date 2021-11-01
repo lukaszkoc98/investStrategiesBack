@@ -1,6 +1,9 @@
 package com.models;
 
+import org.hibernate.annotations.GenericGenerator;
+
 import javax.persistence.*;
+import java.util.UUID;
 
 @Entity
 @Table(name = "users", schema = "public")
@@ -11,11 +14,11 @@ public class User {
         this.password = password;
     }
 
-    public Integer getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
@@ -36,9 +39,13 @@ public class User {
     }
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Integer id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY, generator = "UUID")
+    @GenericGenerator(
+            name = "UUID",
+            strategy = "org.hibernate.id.UUIDGenerator"
+    )
+    @Column(name = "id", unique = true)
+    private UUID id = UUID.randomUUID();
 
     @Column(name = "username")
     private String username;
@@ -57,7 +64,7 @@ public class User {
         this.email = email;
     }
 
-    public User(Integer id, String username, String password, String email){
+    public User(UUID id, String username, String password, String email){
         this.id = id;
         this.username = username;
         this.password = password;

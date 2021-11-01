@@ -45,13 +45,13 @@ public class HistoricalDataBean {
 
     @PostConstruct
     public void init() throws IOException, JSONException {
-        Pair<Metal, Currency> pair = Pair.of(Metal.GOLD, Currency.PLN);
-        this.allRatios.put(Pair.of(Metal.GOLD, Currency.PLN), getRatiosFromAPI(Metal.GOLD.getSymbol(), Currency.PLN.getSymbol()));
-        this.allRatios.put(Pair.of(Metal.GOLD, Currency.USD), getRatiosFromAPI(Metal.GOLD.getSymbol(), Currency.USD.getSymbol()));
-        this.allRatios.put(Pair.of(Metal.GOLD, Currency.EUR), getRatiosFromAPI(Metal.GOLD.getSymbol(), Currency.EUR.getSymbol()));
-        this.allRatios.put(Pair.of(Metal.SILVER, Currency.PLN), getRatiosFromAPI(Metal.GOLD.getSymbol(), Currency.PLN.getSymbol()));
-        this.allRatios.put(Pair.of(Metal.SILVER, Currency.USD), getRatiosFromAPI(Metal.GOLD.getSymbol(), Currency.USD.getSymbol()));
-        this.allRatios.put(Pair.of(Metal.SILVER, Currency.EUR), getRatiosFromAPI(Metal.GOLD.getSymbol(), Currency.EUR.getSymbol()));
+//        Pair<Metal, Currency> pair = Pair.of(Metal.GOLD, Currency.PLN);
+//        this.allRatios.put(Pair.of(Metal.GOLD, Currency.PLN), getRatiosFromAPI(Metal.GOLD.getSymbol(), Currency.PLN.getSymbol()));
+//        this.allRatios.put(Pair.of(Metal.GOLD, Currency.USD), getRatiosFromAPI(Metal.GOLD.getSymbol(), Currency.USD.getSymbol()));
+//        this.allRatios.put(Pair.of(Metal.GOLD, Currency.EUR), getRatiosFromAPI(Metal.GOLD.getSymbol(), Currency.EUR.getSymbol()));
+//        this.allRatios.put(Pair.of(Metal.SILVER, Currency.PLN), getRatiosFromAPI(Metal.GOLD.getSymbol(), Currency.PLN.getSymbol()));
+//        this.allRatios.put(Pair.of(Metal.SILVER, Currency.USD), getRatiosFromAPI(Metal.GOLD.getSymbol(), Currency.USD.getSymbol()));
+//        this.allRatios.put(Pair.of(Metal.SILVER, Currency.EUR), getRatiosFromAPI(Metal.GOLD.getSymbol(), Currency.EUR.getSymbol()));
     }
 
     private Ratios getRatiosFromAPI(String metal, String currency) throws IOException, JSONException {

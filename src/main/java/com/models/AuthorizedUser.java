@@ -1,13 +1,15 @@
-package com.repositories;
+package com.models;
+
+import java.util.UUID;
 
 public class AuthorizedUser {
-    private Integer id;
+    private UUID id;
     private String username;
     private String password;
     private String email;
     private String token;
 
-    public AuthorizedUser(Integer id, String username, String password, String email, String token) {
+    public AuthorizedUser(UUID id, String username, String password, String email, String token) {
         this.id = id;
         this.username = username;
         this.password = password;
@@ -18,11 +20,11 @@ public class AuthorizedUser {
     public AuthorizedUser() {
     }
 
-    public Integer getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
