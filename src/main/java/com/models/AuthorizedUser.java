@@ -1,5 +1,6 @@
 package com.models;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 public class AuthorizedUser {
@@ -8,13 +9,15 @@ public class AuthorizedUser {
     private String password;
     private String email;
     private String token;
+    private LocalDate creationDate;
 
-    public AuthorizedUser(UUID id, String username, String password, String email, String token) {
+    public AuthorizedUser(UUID id, String username, String password, String email, String token, LocalDate creationDate) {
         this.id = id;
         this.username = username;
         this.password = password;
         this.email = email;
         this.token = token;
+        this.creationDate = creationDate;
     }
 
     public AuthorizedUser() {
