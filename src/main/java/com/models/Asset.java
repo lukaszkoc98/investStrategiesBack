@@ -8,8 +8,6 @@ import java.util.UUID;
 @Entity
 @Table(name = "assets", schema = "public")
 public class Asset {
-
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY, generator = "UUID")
     @GenericGenerator(
