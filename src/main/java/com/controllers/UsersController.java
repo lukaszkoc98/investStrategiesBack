@@ -1,8 +1,10 @@
 package com.controllers;
 
+import com.models.Asset;
 import com.models.AuthorizedUser;
 import com.models.ChangePasswordDTO;
 import com.models.User;
+import com.repositories.AssetsRepository;
 import com.repositories.UsersRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -15,6 +17,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -28,7 +33,11 @@ public class UsersController {
     @Autowired
     private UsersRepository usersRepository;
     @Autowired
+    private AssetsRepository assetsRepository;
+    @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    private static Double NEW_USER_CASH = 10000.00;
 
 
     PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -42,13 +51,37 @@ public class UsersController {
 
     @PostMapping()
     @RequestMapping(value = "/add", method = RequestMethod.POST, headers = "Accept=application/json")
-    ResponseEntity<String> newUser(@RequestBody User newUser) {
+    ResponseEntity newUser(@RequestBody User newUser) {
         if (isUsernameTaken(getUsernames(), newUser.getUsername())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Username already taken");
         } else {
-            newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
-            return ResponseEntity.status(HttpStatus.OK).body(usersRepository.save(newUser).toString());
+            newUser = hashPasswordAndSaveNewUser(newUser);
+            saveNewUserAssets(newUser);
+            return ResponseEntity.status(HttpStatus.OK).body(newUser);
         }
+    }
+
+    private User hashPasswordAndSaveNewUser(User newUser) {
+        newUser.setCreationDate(LocalDate.now());
+        newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
+        newUser = usersRepository.save(newUser);
+        return newUser;
+    }
+
+    private void saveNewUserAssets(User newUser) {
+        Asset newUserAssets = new Asset();
+        newUserAssets.setUserID(newUser.getId());
+        newUserAssets.setCash(NEW_USER_CASH);
+        newUserAssets.setGold(0.00);
+        newUserAssets.setSilver(0.00);
+        newUserAssets = assetsRepository.save(newUserAssets);
+    }
+
+    private String getDate(){
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        Date date = new Date();
+
+        return dateFormat.format(date);
     }
 
     @PostMapping()
@@ -98,7 +131,7 @@ public class UsersController {
             User existingUser = getUserByUsername(userToAuthorize.getUsername());
             if (isPasswordCorrect(existingUser.getUsername(), userToAuthorize.getPassword())) {
                 AuthorizedUser authorizedUser = new AuthorizedUser(existingUser.getId(), existingUser.getUsername()
-                        , userToAuthorize.getPassword(), existingUser.getEmail(), jwts);
+                        , userToAuthorize.getPassword(), existingUser.getEmail(), jwts, existingUser.getCreationDate());
                 return ResponseEntity.status(HttpStatus.OK).body(authorizedUser);
             } else {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
