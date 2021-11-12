@@ -1,8 +1,8 @@
 package com.enums;
 
 public enum Metal {
-    GOLD("gold", "XAG"),
-    SILVER("silver", "XAU");
+    GOLD("gold", "XAU"),
+    SILVER("silver", "XAG");
 
     private final String name;
     private final String symbol;
