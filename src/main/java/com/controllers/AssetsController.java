@@ -4,6 +4,7 @@ import com.models.Asset;
 import com.models.RankDTO;
 import com.repositories.AssetsRepository;
 import com.repositories.UsersRepository;
+import com.utils.SortByProfit;
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,6 +31,8 @@ public class AssetsController {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    int DECIMAL_PLACES_TRUNCATE = 2;
+
 
     @GetMapping
     @RequestMapping("/userassets")
@@ -40,23 +43,37 @@ public class AssetsController {
 
     @GetMapping
     @RequestMapping("/rank")
-    public ResponseEntity<ArrayList<RankDTO>> getUsersRank(@RequestParam Double silverRatio, @RequestParam Double goldRatio) throws JSONException, IOException {
+    public ResponseEntity<RankDTO[]> getUsersRank(@RequestParam Double silverRatio, @RequestParam Double goldRatio) throws JSONException, IOException {
         List<Object[]> datafromDB = assetsRepository.getUsersAndAssets();
-        ArrayList <RankDTO> rank = new ArrayList<>();
+        ArrayList<RankDTO> rank = new ArrayList<>();
         parseDBDataToRankDTO(silverRatio, goldRatio, datafromDB, rank);
-        return ResponseEntity.status(HttpStatus.OK).body(rank);
+        RankDTO[] arrayToSort = new RankDTO[rank.size()];
+        arrayToSort = (RankDTO[]) rank.toArray(arrayToSort);
+        Arrays.sort(arrayToSort, new SortByProfit());
+        for (int i = 0; i < arrayToSort.length; i++) {
+            arrayToSort[i].setUsersRankPosition(i + 1);
+        }
+        arrayToSort[arrayToSort.length - 1].setUsersRankPosition(arrayToSort.length);
+        return ResponseEntity.status(HttpStatus.OK).body(arrayToSort);
     }
 
     private void parseDBDataToRankDTO(Double silverRatio, Double goldRatio, List<Object[]> datafromDB, ArrayList<RankDTO> rank) {
         for (Object[] rankElement : datafromDB) {
             String username = String.valueOf(rankElement[0]);
-            long usersActivity = DAYS.between(LocalDate.parse(rankElement[1].toString()),LocalDate.now());
+            long usersActivity = DAYS.between(LocalDate.parse(rankElement[1].toString()), LocalDate.now());
             Double cash = Double.valueOf(rankElement[2].toString());
             Double silverValue = Double.parseDouble(rankElement[3].toString()) * silverRatio;
             Double goldValue = Double.parseDouble(rankElement[4].toString()) * goldRatio;
-            Double totalProfit = cash + silverValue + goldValue - 10000;
-            rank.add(new RankDTO(null,username, (int) usersActivity, totalProfit, totalProfit/usersActivity));
+            Double totalProfit = change((cash + silverValue + goldValue - 10000), DECIMAL_PLACES_TRUNCATE);
+            Double usersProfitPerDay =change((totalProfit / usersActivity), DECIMAL_PLACES_TRUNCATE);
+            rank.add(new RankDTO(null, username, (int) usersActivity, totalProfit, usersProfitPerDay));
         }
+    }
+
+    static Double change(double value, int decimalpoint) {
+        value = value * Math.pow(10, decimalpoint);
+        value = Math.floor(value);
+        return value / Math.pow(10, decimalpoint);
     }
 
     private Asset getAndTruncateAsset(UUID userId) {
