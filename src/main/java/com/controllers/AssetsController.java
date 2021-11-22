@@ -5,6 +5,9 @@ import com.models.RankDTO;
 import com.repositories.AssetsRepository;
 import com.repositories.UsersRepository;
 import com.utils.SortByProfit;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jwts;
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -36,9 +39,15 @@ public class AssetsController {
 
     @GetMapping
     @RequestMapping("/userassets")
-    public ResponseEntity<Asset> getUserAssets(@RequestParam UUID userId) throws JSONException, IOException {
-        Asset userAssets = getAndTruncateAsset(userId);
-        return ResponseEntity.status(HttpStatus.OK).body(userAssets);
+    public ResponseEntity<Asset> getUserAssets(@RequestParam UUID userId,
+                                               @RequestHeader("x-token") String token) throws JSONException, IOException {
+        try {
+            Claims claims = Jwts.parser().setSigningKey("secretkey").parseClaimsJws(token).getBody();
+            Asset userAssets = getAndTruncateAsset(userId);
+            return ResponseEntity.status(HttpStatus.OK).body(userAssets);
+        } catch (ExpiredJwtException expiredJwtException) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        }
     }
 
     @GetMapping

@@ -7,6 +7,7 @@ import com.models.User;
 import com.repositories.AssetsRepository;
 import com.repositories.UsersRepository;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,16 +87,23 @@ public class UsersController {
 
     @PostMapping()
     @RequestMapping(value = "/changepassword", method = RequestMethod.POST, headers = "Accept=application/json")
-    ResponseEntity<String> changePassword(@RequestBody ChangePasswordDTO changePasswordDTO) {
-        if (null != changePasswordDTO.newPassword &&
-                changePasswordDTO.newPassword.equals(changePasswordDTO.newPasswordRepeated)) {
-            if (checkPasswordPolicies(changePasswordDTO.newPassword)) {
-                User existingUser = getUserByUsername(changePasswordDTO.username);
-                return changePasswordIfCurrentPasswordCorrect(changePasswordDTO, existingUser);
+    ResponseEntity<String> changePassword(@RequestBody ChangePasswordDTO changePasswordDTO,
+                                          @RequestHeader("x-token") String token) {
+        try {
+            Claims claims = Jwts.parser().setSigningKey("secretkey").parseClaimsJws(token).getBody();
+            if (null != changePasswordDTO.newPassword &&
+                    changePasswordDTO.newPassword.equals(changePasswordDTO.newPasswordRepeated)) {
+                if (checkPasswordPolicies(changePasswordDTO.newPassword)) {
+                    User existingUser = getUserByUsername(changePasswordDTO.username);
+                    return changePasswordIfCurrentPasswordCorrect(changePasswordDTO, existingUser);
+                }
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Password do not meets password policies");
             }
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Password do not meets password policies");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Passwords are not equal");
+        } catch (ExpiredJwtException expiredJwtException) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Your session expired");
         }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Passwords are not equal");
+
     }
 
     private ResponseEntity<String> changePasswordIfCurrentPasswordCorrect(ChangePasswordDTO changePasswordDTO, User existingUser) {
@@ -124,7 +132,7 @@ public class UsersController {
                 .setSubject(userToAuthorize.getUsername())
                 .claim("roles", "user")
                 .setIssuedAt(new Date(now))
-                .setExpiration(new Date(now + 36000))
+                .setExpiration(new Date(now + 3600000))
                 .signWith(SignatureAlgorithm.HS512, "secretkey").compact();
         Claims claims = Jwts.parser().setSigningKey("secretkey").parseClaimsJws(jwts).getBody();
         try {
