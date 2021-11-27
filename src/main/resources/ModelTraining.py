@@ -6,7 +6,7 @@ from pycaret.regression import *
 from yahoofinancials import YahooFinancials
 import sys
 
-ticker_details = pd.read_excel("E:/POLSL/inzynierka/projekt/projekt_zrodlowy/initializr/demo/src/main/resources/Ticker List.xlsx", engine='openpyxl')
+ticker_details = pd.read_excel("E:/POLSL/inzynierka/projekt/investStrategiesBack/src/main/resources/Ticker List.xlsx", engine='openpyxl')
 ticker_details.head(20)
 
 ticker = ticker_details['Ticker'].to_list()
@@ -47,7 +47,7 @@ cols=values.columns.drop('Date')
 values[cols] = values[cols].apply(pd.to_numeric,errors='coerce').round(decimals=1)
 values.tail()
 
-values.to_csv("E:/POLSL/inzynierka/projekt/projekt_zrodlowy/initializr/demo/src/main/resources/Training Data_Values.csv")
+values.to_csv("E:/POLSL/inzynierka/projekt/investStrategiesBack/src/main/resources/Training Data_Values.csv")
 
 imp = ['Gold','Silver', 'Crude Oil', 'S&P500','MSCI EM ETF']
 # Calculating Short term -Historical Returns

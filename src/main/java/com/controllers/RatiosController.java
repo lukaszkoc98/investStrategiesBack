@@ -36,7 +36,6 @@ public class RatiosController {
         return ResponseEntity.status(HttpStatus.OK).body(ratios);
     }
 
-
     Currency getSymbol(String name) {
         for (Currency currency : Currency.values()) {
             if(currency.getSymbol().equals(name)) {

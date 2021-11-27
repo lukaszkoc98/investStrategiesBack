@@ -1,5 +1,6 @@
 package com.controllers;
 
+import com.beans.PredictinosBean;
 import com.models.Asset;
 import com.models.RankDTO;
 import com.repositories.AssetsRepository;
@@ -16,6 +17,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,7 +42,7 @@ public class AssetsController {
     @GetMapping
     @RequestMapping("/userassets")
     public ResponseEntity<Asset> getUserAssets(@RequestParam UUID userId,
-                                               @RequestHeader("x-token") String token) throws JSONException, IOException {
+                                               @RequestHeader("x-token") String token) {
         try {
             Claims claims = Jwts.parser().setSigningKey("secretkey").parseClaimsJws(token).getBody();
             Asset userAssets = getAndTruncateAsset(userId);
@@ -52,7 +54,7 @@ public class AssetsController {
 
     @GetMapping
     @RequestMapping("/rank")
-    public ResponseEntity<RankDTO[]> getUsersRank(@RequestParam Double silverRatio, @RequestParam Double goldRatio) throws JSONException, IOException {
+    public ResponseEntity<RankDTO[]> getUsersRank(@RequestParam Double silverRatio, @RequestParam Double goldRatio) {
         List<Object[]> datafromDB = assetsRepository.getUsersAndAssets();
         ArrayList<RankDTO> rank = new ArrayList<>();
         parseDBDataToRankDTO(silverRatio, goldRatio, datafromDB, rank);

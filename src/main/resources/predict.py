@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime
 import matplotlib.pyplot as plt
 from yahoofinancials import YahooFinancials
-ticker_details = pd.read_excel("E:/POLSL/inzynierka/projekt/projekt_zrodlowy/initializr/demo/src/main/resources/Ticker List.xlsx", engine='openpyxl')
+ticker_details = pd.read_excel("E:/POLSL/inzynierka/projekt/investStrategiesBack/src/main/resources/Ticker List.xlsx", engine='openpyxl')
 ticker = ticker_details['Ticker'].to_list()
 names = ticker_details['Description'].to_list()
 #Preparing Date Range
@@ -63,7 +63,7 @@ prediction_data = data.copy()
 
 from pycaret.regression import *
 #Loading the stored model
-regressor_22 = load_model("22Day Regressor")
+regressor_22 = load_model("E:/POLSL/inzynierka/projekt/investStrategiesBack/src/main/resources/22Day Regressor")
 #Making Predictions
 predicted_return_22 = predict_model(regressor_22,data=prediction_data)
 predicted_return_22=predicted_return_22[['Date','Label']]
@@ -78,4 +78,4 @@ from datetime import datetime, timedelta
 predicted_values['Date-T+22'] = predicted_values['Date']+timedelta(days = 22)
 predicted_values.tail()
 
-print(predicted_values)
+predicted_values.to_excel("E:/POLSL/inzynierka/projekt/investStrategiesBack/src/main/resources/goldResult.xlsx")
