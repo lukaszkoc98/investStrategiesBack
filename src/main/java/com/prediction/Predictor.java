@@ -14,9 +14,9 @@ import java.util.*;
 
 public class Predictor {
 
-    public static ArrayList<Prediction> predict() throws IOException, ParseException {
+    public static ArrayList<Prediction> predict(String metal) throws IOException, ParseException {
         ProcessBuilder builder = new ProcessBuilder(
-                "cmd.exe", "/c", "python src\\main\\resources\\predict.py");
+                "cmd.exe", "/c", "python src\\main\\resources\\predict.py " + metal);
         builder.redirectErrorStream(true);
         Process p = builder.start();
         BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -27,10 +27,8 @@ public class Predictor {
             System.out.println(line);
         }
 
-
-
         String filePath = new File("").getAbsolutePath();
-        filePath = filePath.concat("\\src\\main\\resources\\goldResult.xlsx");
+        filePath = filePath.concat("\\src\\main\\resources\\" + metal + ".xlsx");
         FileInputStream file = new FileInputStream(new File(filePath));
         Workbook workbook = new XSSFWorkbook(file);
         Sheet sheet = workbook.getSheetAt(0);

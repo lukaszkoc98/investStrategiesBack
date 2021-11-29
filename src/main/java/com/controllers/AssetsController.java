@@ -76,7 +76,7 @@ public class AssetsController {
             Double silverValue = Double.parseDouble(rankElement[3].toString()) * silverRatio;
             Double goldValue = Double.parseDouble(rankElement[4].toString()) * goldRatio;
             Double totalProfit = change((cash + silverValue + goldValue - 10000), DECIMAL_PLACES_TRUNCATE);
-            Double usersProfitPerDay =change((totalProfit / usersActivity), DECIMAL_PLACES_TRUNCATE);
+            Double usersProfitPerDay =change((totalProfit / (usersActivity == 0?1:usersActivity)), DECIMAL_PLACES_TRUNCATE);
             rank.add(new RankDTO(null, username, (int) usersActivity, totalProfit, usersProfitPerDay));
         }
     }

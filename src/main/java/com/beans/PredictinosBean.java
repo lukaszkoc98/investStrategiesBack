@@ -11,6 +11,7 @@ import javax.annotation.PostConstruct;
 import javax.ejb.Startup;
 import java.io.IOException;
 import java.text.ParseException;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
@@ -20,26 +21,48 @@ import java.util.Date;
 @Startup
 public class PredictinosBean {
 
-    private ArrayList<Prediction> predictions = new ArrayList<>();
+    private ArrayList<Prediction> predictionsGold = new ArrayList<>();
+    private ArrayList<Prediction> predictionsSilver = new ArrayList<>();
 
-    public ArrayList<Prediction> getPredictions() throws IOException, ParseException {
-        if (isPredictionActual(this.predictions)) {
-            return this.predictions;
+    public ArrayList<Prediction> getGoldPredictions() throws IOException, ParseException {
+        if (isPredictionActual(this.predictionsGold)) {
+            return this.predictionsGold;
         }
-        predict();
-        return this.predictions;
+        predict("Gold");
+        return this.predictionsGold;
+    }
+
+    public ArrayList<Prediction> getSilverPredictions() throws IOException, ParseException {
+        if (isPredictionActual(this.predictionsSilver)) {
+            return this.predictionsSilver;
+        }
+        predict("Silver");
+        return this.predictionsSilver;
     }
 
     @PostConstruct
-    public void predict() throws IOException, ParseException {
-        this.predictions = Predictor.predict();
+    public void init() throws IOException, ParseException {
+        predict("Gold");
+        predict("Silver");
+    }
+
+    public void predict(String metal) throws IOException, ParseException {
+        if ("Gold".equals(metal)) {
+            this.predictionsGold = Predictor.predict(metal);
+        } else {
+            this.predictionsSilver = Predictor.predict(metal);
+        }
     }
 
 
     private boolean isPredictionActual(ArrayList<Prediction> predictions) {
         int today = LocalDate.now().getDayOfYear();
         int lastPredictionDate = predictions.get(predictions.size() - 1).getFutureDate().getDayOfYear();
-        return today == lastPredictionDate - 22;
+        if (LocalDate.now().getDayOfWeek() == DayOfWeek.SATURDAY
+                || LocalDate.now().getDayOfWeek() == DayOfWeek.SUNDAY) {
+            return today <= lastPredictionDate - 20;
+        }
+        return today <= lastPredictionDate - 22;
     }
 
 }

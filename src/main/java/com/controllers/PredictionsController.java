@@ -29,7 +29,18 @@ public class PredictionsController {
     @RequestMapping("/gold")
     public ResponseEntity<ArrayList<Prediction>> getGoldPredictions() {
         try {
-            return ResponseEntity.status(HttpStatus.OK).body(predictinosBean.getPredictions());
+            return ResponseEntity.status(HttpStatus.OK).body(predictinosBean.getGoldPredictions());
+        } catch (Exception exception) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+
+    @GetMapping
+    @RequestMapping("/silver")
+    public ResponseEntity<ArrayList<Prediction>> getSilverPredictions() {
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body(predictinosBean.getSilverPredictions());
         } catch (Exception exception) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }

@@ -13,7 +13,7 @@ ticker = ticker_details['Ticker'].to_list()
 names = ticker_details['Description'].to_list()
 
 #Extracting Data from Yahoo Finance and Adding them to Values table using date as key
-end_date= "2021-11-10"
+end_date= "2021-11-25"
 start_date = "2010-01-01"
 date_range = pd.bdate_range(start=start_date,end=end_date)
 values = pd.DataFrame({ 'Date': date_range})
@@ -178,4 +178,4 @@ blend_knn_et = blend_models(estimator_list=[knn_tuned,et])
 
 # stack3 = create_stacknet(estimator_list=[[lightgbm,et,knn_tuned],[blend_knn_et]], restack=True,meta_model=blend_knn_et)
 
-save_model(model=blend_knn_et, model_name='22Day Regressor')
+save_model(model=blend_knn_et, model_name='22DayGold')
