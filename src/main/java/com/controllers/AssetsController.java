@@ -97,13 +97,17 @@ public class AssetsController {
 
     @PostMapping
     @RequestMapping("/trade")
-    public ResponseEntity<String> makeTrade(@RequestBody Asset newAsset) {
-
-        int rowsChanged = assetsRepository.updateAssets(
-                newAsset.getId(), truncate(newAsset.getGold()),
-                truncate(newAsset.getSilver()), truncate(newAsset.getCash()));
-        if (rowsChanged > 0) {
-            return ResponseEntity.status(HttpStatus.OK).body("Transaction success");
+    public ResponseEntity<String> makeTrade(@RequestBody Asset newAsset, @RequestHeader("x-token") String token) {
+        try {
+            Claims claims = Jwts.parser().setSigningKey("secretkey").parseClaimsJws(token).getBody();
+            int rowsChanged = assetsRepository.updateAssets(
+                    newAsset.getId(), truncate(newAsset.getGold()),
+                    truncate(newAsset.getSilver()), truncate(newAsset.getCash()));
+            if (rowsChanged > 0) {
+                return ResponseEntity.status(HttpStatus.OK).body("Transaction success");
+            }
+        } catch (ExpiredJwtException expiredJwtException) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Transaction failed");
     }
